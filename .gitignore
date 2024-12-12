@@ -1,0 +1,12 @@
+assg_01
+assg_02
+assg_04
+assg_03/docs
+vugrad
+
+.envrc
+.venv
+.vscode
+
+.pytest_cache
+__pycache__
