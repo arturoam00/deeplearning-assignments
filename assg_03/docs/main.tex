@@ -103,7 +103,37 @@ for b in range(batch_size):
 return Y
 \end{minted}
 
-\paragraph{} 
+\paragraph{question 4} To calculate the backward of the con2d operation, we first present some notation. We first present all the tensors involved and what each of their indices represent. Later, we will use dummy indices for the caclculations, always keeping in mind what each of them represent, which will be determined by their postion. First, the constants:
+
+\begin{itemize}
+    \item \(b, c, h, w\): Batch size, input channels, input width and input height.
+    \item \( h_k, w_k\): Kernel height and kernel width.
+    \item \(c_{out}, h_{out}, w_{out}\): Output channels, output height and output width.
+    \item \(p\): Total number of patches. Resulting from doing \(h_{out} * w_{out}\).
+    \item \(k\): Total number of values per patch. Resulting from doing \(c * h_k * w_k\)
+\end{itemize}
+
+Now we define the tensors involved. The indices are now named with what they represent. We will later have to remember this:
+\begin{itemize}
+    \item Input batch: \(\mathbf{X} = X_{bchw}\)
+    \item Unfolded input: \(\mathbf{U} = U_{bkp}\)
+    \item Unfolded input transposed: \(\mathbf{\tilde{U}} = \tilde{U}_{bpk} = \textbf{U}.\text{transpose}(1, 2)\)
+    \item Kernel matrix: \(\mathbf{W} = W_{c_{out}ch_kw_k}\)
+    \item Kernel matrix reshaped and transposed: \(\mathbf{\tilde{W}} = \tilde{W}_{kc_{out}} = \)
+    
+    \( = \mathbf{W}.\text{reshape}(c_{out}, c * h_k * w_k).\text{transpose}()\)
+    \item Output without reshaping: \(\mathbf{Y}' = Y'_{bpc_{out}} = \sum_k \tilde{U}_{bpk}\tilde{W}_{kc_{out}}\)
+    \item Output: \(\mathbf{Y} = Y_{bc_{out}h_{out}w_{out}} = \)
+    
+    \( = \mathbf{Y}'.\text{transpose}(1, 2).\text{reshape}(b, c_{out}, h_{out}, w_{out})\)
+\end{itemize} 
+
+Before calculating \(\mathbf{W}^\nabla\) and \(\mathbf{X}^\nabla\) we present some useful derivatives. Note that there will be matrices which elements have a one to one correspondence, but their shapes are different. This is the case for example of \(\mathbf{Y}\) and \(\mathbf{Y}'\). When doing derivatives of one w.r.t. the other, we will have simple deltas for the dimensions that match, and ``special'' deltas for those dimensions that not match, but we still have a one to one correspondence of elements. This will become clear in the following derivatives.
+\begin{align*}
+    \frac{\partial Y_{abcd}}{\partial Y'_{efg}} = \delta_{ae}\delta_{bg}\delta_{cd, f} ~~;~~ \frac{\partial Y'_{efg}}{\partial \tilde{W}_{hi}} = \tilde{U}_{efh}\delta_{gi} ~~;~~ \frac{\partial \tilde{W}_{hi}}{\partial W_{abcd}} = \delta_{ia}\delta_{h, bcd}
+\end{align*}
+
+The deltas of the type \(\delta_{ab,c}\) appear when we are dealing with different shapes but there is still a one to one correspondence of elements. In this case we want to pick the element \(ab\) that corresponds to \(c\)\footnote{If this is not still clear, imagine that we have a tensor \(\mathbf{X}\) with elements \(X_{11}, X_{12}, X_{21}\) and \(X_{22}\). We can ``flatten'' this into a vector of four values \(\mathbf{x}\). \(X_{11}\) corresponds to \(x_1\), \(X_{12}\) to \(x_2\) and so on. The derivative \(\partial X_{ab} / \partial x_c = \delta_{ab, c}\).}.
 
 \pagebreak % Add a new page so the codeblock isn't broken up.
 

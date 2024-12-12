@@ -3,6 +3,8 @@ import torch
 import torch.nn.functional as F
 from src.conv_layer_func import Conv2DFunc
 
+from .helpers import EPSILON
+
 
 @pytest.mark.parametrize("batch_size", [2, 1])
 @pytest.mark.parametrize("in_channels", [3, 5])
@@ -42,7 +44,32 @@ def test_conv2d_function(
     ), "Forward pass mismatch"
 
     # Backward pass
-    # Gradient check
+    loss = output_custom.sum()
+    loss.backward()
+
+    grad_input = input_tensor.grad.clone()
+    grad_kernel = kernel_tensor.grad.clone()
+
+    # Reset gradients
+    input_tensor.grad = None
+    kernel_tensor.grad = None
+
+    loss_pytorch = output_torch.sum()
+    loss_pytorch.backward()
+
+    grad_input_torch = input_tensor.grad.clone()
+    grad_kernel_torch = kernel_tensor.grad.clone()
+
+    for grad, ref_grad in zip(
+        [grad_input, grad_kernel],
+        [grad_input_torch, grad_kernel_torch],
+    ):
+        assert torch.allclose(grad, ref_grad, atol=EPSILON), "Backward pass mismatch"
+
+    input_tensor.grad = None
+    kernel_tensor.grad = None
+
+    # Numerical Gradient check
     gradcheck_input = (
         input_tensor.clone().detach().requires_grad_(True),
         kernel_tensor.clone().detach().requires_grad_(True),
@@ -51,4 +78,4 @@ def test_conv2d_function(
     )
     assert torch.autograd.gradcheck(
         C2D, gradcheck_input, eps=1e-6, atol=1e-4
-    ), "Gradcheck failed"
+    ), "Numerical gradcheck failed"
