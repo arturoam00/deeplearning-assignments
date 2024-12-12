@@ -1,7 +1,6 @@
 assg_01
 assg_02
 assg_04
-assg_03/docs
 vugrad
 
 .envrc
@@ -10,3 +9,8 @@ vugrad
 
 .pytest_cache
 __pycache__
+
+*.gz
+*.log
+*.aux
+_minted-main

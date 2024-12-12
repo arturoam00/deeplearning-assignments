@@ -1,0 +1,113 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx} % For inserting images
+\usepackage{minted}   % For typesetting code
+\usepackage{eulervm}  % We suggest the Euler typeface for math, but feel free to 
+\usepackage{charter}  % This typeface works well with Euler
+\usepackage{xcolor}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{bm}
+
+\usepackage[T1]{fontenc}       % Use T1 encoding
+
+\title{Assignment 3}
+
+% Single author assignments
+\author{Arturo Abril Martinez (2813498)}
+
+% Group  assignments
+% \author{FirstName1 LastName2 (Student Number) \\ FirstName2 LastName2 (Student number)\\ FirstName3 LastName3 (Student number)}
+
+\date{December 2024}
+
+\input{commands} 
+
+\begin{document}
+
+\maketitle
+
+\section{Answers}
+
+\paragraph{question 1} The learnable weights of the conv layer are represented as a tensor of shape:
+
+\medskip
+
+\noindent \mintinline{Python}|(output_channels, input_channels, kernel_height, kernel_width)|
+
+\medskip
+\noindent This is the set of \emph{filters} of the convolutional layer. More explicitly (and excluding the bias terms) we will have \mintinline{Python}|W0, W1, W2, ...| and so on up until the number given by \mintinline{Python}|output_channels|. The total number of parameters will then be: 
+
+\medskip
+\noindent \mintinline{Python}|kernel_width * kernel_height * input_channels * output_channels|. 
+
+\medskip
+\noindent The pseudocode to implement the convolution is:
+
+\begin{minted}{Python}
+Y = \
+torch.zeros((batch_size, output_channels, output_height, \
+    output_width))
+
+for b in range(batch_size):
+    for ch in range(output_channels)
+        for row in range(output_height):
+            for col in range(output_width):
+                Y[b,ch,row,col] = \
+                ( \
+                    X[b,:,row*S:hk+row*S,col*S:wk+col*S] \
+                    * W[ch,:,:,:]
+                ).sum()
+return Y
+\end{minted}
+
+\noindent Where \mintinline{Python}|S| represents the stride and \mintinline{Python}|hk| and \mintinline{Python}|wk| the kernel (or filter) height and width respectively. Note that the multiplication inside the \mintinline{Python}|sum()| is element-wise, and in the pseudocode \mintinline{Python}|W| is the set of all weight tensors, so that 
+
+\noindent \mintinline{Python}|W[0,:,:,:] = W0|. \emph{Note: I assume the input images are already padded, if they need to be.}
+
+\paragraph{question 2} Given that the size of the input is \((C_{in}, H_{in}, W_{in})\), we can calculate the size of the output as:
+\[
+    W_{out} = \frac{W_{in} - K + 2P}{S} + 1
+\]
+\(H_{out}\) can be calculated using the same formula by symmetry, changing \(W_{in} \rightarrow H_{in}\). The size of the output is then \((C_{out}, H_{out}, W_{out})\) where \(C_{out}\) can be chosen to be any number. \(K, S\) and \(P\) are the kernel size, stride and padding respectively\footnote{I have ommited the batch size in the calculation. Of course, for every tensor in the input batch we would have an output tensor, which dimensions can be calculated with the formula provided.}.
+
+\paragraph{question 3} Below is the pseudocode for the unfold operation. \mintinline{Python}|p, k| and \mintinline{Python}|S| represent the total number of patches, number of values per patch and stride respectively. \mintinline{Python}|w| (\mintinline{Python}|wk|) and \mintinline{Python}|h| (\mintinline{Python}|hk|) are the input (kernel) width and height respectively. \emph{Note: I assume the input images are already padded, if needed to be.}
+
+\begin{minted}{Python}
+Y = torch.zeros((batch_size, p, k))
+for b in range(batch_size):
+    # iterate over rows in the output
+    # each row will be a flattened image patch
+    for row in range(p):
+        # select patch
+        i = row//w_out  # transition row every `w_out` patches
+        j = row%(w-wk+1) # when `row` exceeds maximum, start over
+        start_row, start_col = i*S, j*S
+        patch = X[
+            b, :, start_row : start_row+hk, \
+            start_col : start_col+wk
+        ]
+
+        # flatten patch
+        counter = 0
+        for ch_patch in range(input_channels):
+            for row_patch in range(hk):
+                for col_patch in range(wk):
+                    Y[b, row, counter] = \
+                    patch[ch_patch, row_patch, col_patch]
+                    counter += 1
+# This way the output will have size (batch_size, p, k)
+return Y
+\end{minted}
+
+\paragraph{} 
+
+\pagebreak % Add a new page so the codeblock isn't broken up.
+
+\appendix
+\section{Appendix}
+
+\end{document}
